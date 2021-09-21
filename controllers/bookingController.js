@@ -74,7 +74,8 @@ exports.verification = async (req, res) => {
 };
 
 exports.getBookings = catchAsync(async (req, res, next) => {
-  const bookings = await Booking.find({ user: req.user.id })
+  const user = req.user.role === 'admin' ? {} : { user: req.user.id };
+  const bookings = await Booking.find(user)
     .sort({
       createdAt: -1
     })

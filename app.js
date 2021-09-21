@@ -50,10 +50,7 @@ app.use(
   })
 );
 
-app.get('/tours/:img', (req, res) => {
-  const imgPath = `/img/tours/${req.params.img}`;
-  res.sendFile(path.join(__dirname, imgPath));
-});
+app.use('/tours', express.static(path.join(__dirname, 'public', 'tours')));
 
 app.use('/api/users', userRouter);
 app.use('/api/tours', tourRouter);
