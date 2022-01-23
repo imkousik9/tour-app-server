@@ -24,6 +24,10 @@ const userSchema = new mongoose.Schema({
     required: [true, 'Please provide a password'],
     minlength: 8,
     select: false
+  },
+  tokenVersion: {
+    type: Number,
+    default: 0
   }
 });
 
