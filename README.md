@@ -10,7 +10,7 @@ Frontend Code -> [https://github.com/imkousik9/tour-app](https://github.com/imko
 <br>
 Backend Code -> [https://github.com/imkousik9/tour-app-server](https://github.com/imkousik9/tour-app-server)
 <br>
-Deployed URL -> [https://tour-app-pi.vercel.app](https://tour-app-pi.vercel.app)
+Deployed URL -> [https://tour-app-brown.vercel.app](https://tour-app-brown.vercel.app)
 <br>
 
 **Run the site locally**
