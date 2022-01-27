@@ -41,8 +41,8 @@ app.use(
     cookie: {
       maxAge: 1000 * 60 * 60 * 24 * process.env.COOKIE_EXPIRES_IN,
       httpOnly: true,
-      sameSite: process.env.COOKIE_SAME_SITE,
-      secure: process.env.NODE_ENV === 'production' // cookie only works in https
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      secure: process.env.NODE_ENV === 'production'
     },
     saveUninitialized: false,
     secret: process.env.SESSION_SECRET,
