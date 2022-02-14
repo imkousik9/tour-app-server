@@ -1,9 +1,7 @@
 const express = require('express');
 const path = require('path');
 const cors = require('cors');
-const Redis = require('ioredis');
-const session = require('express-session');
-const connectRedis = require('connect-redis');
+const cookieParser = require('cookie-parser');
 
 const userRouter = require('./routes/userRoutes');
 const tourRouter = require('./routes/tourRoutes');
@@ -21,34 +19,7 @@ app.use(
 
 app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
-
-const URL = {
-  port: process.env.REDIS_PORT,
-  host: process.env.REDIS_URL,
-  password: process.env.REDIS_PASSWORD
-};
-
-const RedisStore = connectRedis(session);
-const redis = new Redis(URL);
-
-app.use(
-  session({
-    name: process.env.COOKIE_NAME,
-    store: new RedisStore({
-      client: redis,
-      disableTouch: true
-    }),
-    cookie: {
-      maxAge: 1000 * 60 * 60 * 24 * process.env.COOKIE_EXPIRES_IN,
-      httpOnly: true,
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-      secure: process.env.NODE_ENV === 'production'
-    },
-    saveUninitialized: false,
-    secret: process.env.SESSION_SECRET,
-    resave: false
-  })
-);
+app.use(cookieParser());
 
 app.use('/tours', express.static(path.join(__dirname, 'public', 'tours')));
 

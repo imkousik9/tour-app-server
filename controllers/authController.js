@@ -1,9 +1,18 @@
 const catchAsync = require('./../utils/catchAsync');
+const {
+  buildTokens,
+  setTokens,
+  verifyRefreshToken,
+  refreshTokens,
+  clearTokens
+} = require('./../utils/token-utils');
 const User = require('./../models/userModel');
 
 const createSendToken = (user, statusCode, req, res) => {
   user.password = undefined;
-  req.session.user = user;
+
+  const { accessToken, refreshToken } = buildTokens(user);
+  setTokens(res, accessToken, refreshToken);
 
   res.status(statusCode).json(user);
 };
@@ -36,7 +45,7 @@ exports.login = catchAsync(async (req, res, next) => {
   const user = await User.findOne({ email }).select('+password');
 
   if (!user || !(await user.correctPassword(password, user.password))) {
-    res.status(401).json({
+    return res.status(401).json({
       status: 'Bad Request',
       message: 'Incorrect email or password'
     });
@@ -45,13 +54,27 @@ exports.login = catchAsync(async (req, res, next) => {
   createSendToken(user, 200, req, res);
 });
 
+exports.tokenRefresh = catchAsync(async (req, res) => {
+  try {
+    const current = verifyRefreshToken(req.cookies['refresh']);
+    const user = await User.findById(current.userId);
+
+    if (!user) throw 'User not found';
+
+    const { accessToken, refreshToken } = refreshTokens(
+      current,
+      user.tokenVersion
+    );
+
+    setTokens(res, accessToken, refreshToken);
+  } catch (error) {
+    clearTokens(res);
+  }
+
+  res.end();
+});
+
 exports.logout = (req, res) => {
-  req.session.destroy((err) => {
-    res.clearCookie(process.env.COOKIE_NAME);
-    res.status(200).json({ status: 'success' });
-    if (err) {
-      console.log(err);
-      return;
-    }
-  });
+  clearTokens(res);
+  res.end();
 };
