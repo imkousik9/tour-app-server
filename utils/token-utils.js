@@ -46,8 +46,12 @@ function verifyAccessToken(token) {
 }
 
 function buildTokens(user) {
-  const accessPayload = { userId: user._id };
-  const refreshPayload = { userId: user._id, version: user.tokenVersion };
+  const accessPayload = { userId: user._id, userRole: user.role };
+  const refreshPayload = {
+    userId: user._id,
+    userRole: user.role,
+    version: user.tokenVersion
+  };
 
   const accessToken = signAccessToken(accessPayload);
   const refreshToken = refreshPayload && signRefreshToken(refreshPayload);
@@ -63,7 +67,7 @@ function setTokens(res, access, refresh) {
 function refreshTokens(current, tokenVersion) {
   if (tokenVersion !== current.version) throw 'Token revoked';
 
-  const accessPayload = { userId: current.userId };
+  const accessPayload = { userId: current.userId, userRole: current.userRole };
   let refreshPayload;
 
   const expiration = new Date(current.exp * 1000);
@@ -71,7 +75,11 @@ function refreshTokens(current, tokenVersion) {
   const secondsUntilExpiration = (expiration.getTime() - now.getTime()) / 1000;
 
   if (secondsUntilExpiration < tokenExpiration.refreshIfLessThan) {
-    refreshPayload = { userId: current.userId, version: tokenVersion };
+    refreshPayload = {
+      userId: current.userId,
+      userRole: current.userRole,
+      version: tokenVersion
+    };
   }
 
   const accessToken = signAccessToken(accessPayload);
