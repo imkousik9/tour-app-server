@@ -21,7 +21,7 @@ app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(cookieParser());
 
-app.use('/tours', express.static(path.join(__dirname, 'public', 'tours')));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/users', userRouter);
 app.use('/api/tours', tourRouter);

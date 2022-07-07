@@ -1,7 +1,13 @@
+const fs = require('fs');
 const multer = require('multer');
 const sharp = require('sharp');
-const Tour = require('./../models/tourModel');
+const cloudinary = require('./../utils/cloudinary');
 const catchAsync = require('./../utils/catchAsync');
+const Tour = require('./../models/tourModel');
+
+if (!fs.existsSync('./uploads')) {
+  fs.mkdirSync('./uploads');
+}
 
 const multerStorage = multer.memoryStorage();
 
@@ -18,6 +24,27 @@ const upload = multer({
   fileFilter: multerFilter
 });
 
+async function uploadToCloudinary(localFilePath) {
+  const mainFolderName = 'tour-app';
+
+  const filePathOnCloudinary = mainFolderName + '/' + localFilePath;
+
+  return cloudinary.uploader
+    .upload(localFilePath, { public_id: filePathOnCloudinary })
+    .then((result) => {
+      fs.unlinkSync(localFilePath);
+
+      return {
+        message: 'Success',
+        url: result.url
+      };
+    })
+    .catch((error) => {
+      fs.unlinkSync(localFilePath);
+      return { message: 'Fail' };
+    });
+}
+
 exports.uploadTourImages = upload.fields([
   { name: 'imageCover', maxCount: 1 },
   { name: 'images', maxCount: 3 }
@@ -26,26 +53,32 @@ exports.uploadTourImages = upload.fields([
 exports.resizeTourImages = catchAsync(async (req, res, next) => {
   if (!req.files.imageCover || !req.files.images) return next();
 
-  req.body.imageCover = `tour-${Date.now()}-cover.jpeg`;
+  const imageCover = `uploads/tour-${Date.now()}-cover.jpeg`;
   await sharp(req.files.imageCover[0].buffer)
     .resize(2000, 1333)
     .toFormat('jpeg')
     .jpeg({ quality: 90 })
-    .toFile(`public/tours/${req.body.imageCover}`);
+    .toFile(imageCover);
+
+  const imageCoverResult = await uploadToCloudinary(imageCover);
+
+  req.body.imageCover = imageCoverResult.url;
 
   req.body.images = [];
 
   await Promise.all(
     req.files.images.map(async (file, i) => {
-      const filename = `tour-${Date.now()}-${i + 1}.jpeg`;
+      const filename = `uploads/tour-${Date.now()}-${i + 1}.jpeg`;
 
       await sharp(file.buffer)
         .resize(2000, 1333)
         .toFormat('jpeg')
         .jpeg({ quality: 90 })
-        .toFile(`public/tours/${filename}`);
+        .toFile(filename);
 
-      req.body.images.push(filename);
+      const imagesResult = await uploadToCloudinary(filename);
+
+      req.body.images.push(imagesResult.url);
     })
   );
 
