@@ -36,7 +36,8 @@ async function uploadToCloudinary(localFilePath) {
 
       return {
         message: 'Success',
-        url: result.url
+        url: result.secure_url,
+        public_id: result.public_id
       };
     })
     .catch((error) => {
@@ -53,7 +54,7 @@ exports.uploadTourImages = upload.fields([
 exports.resizeTourImages = catchAsync(async (req, res, next) => {
   if (!req.files.imageCover || !req.files.images) return next();
 
-  const imageCover = `uploads/tour-${Date.now()}-cover.jpeg`;
+  const imageCover = `uploads/tour-${Date.now()}-cover`;
   await sharp(req.files.imageCover[0].buffer)
     .resize(2000, 1333)
     .toFormat('jpeg')
@@ -63,12 +64,14 @@ exports.resizeTourImages = catchAsync(async (req, res, next) => {
   const imageCoverResult = await uploadToCloudinary(imageCover);
 
   req.body.imageCover = imageCoverResult.url;
+  req.body.imageCoverPublicId = imageCoverResult.public_id;
 
   req.body.images = [];
+  req.body.imagesPublicId = [];
 
   await Promise.all(
     req.files.images.map(async (file, i) => {
-      const filename = `uploads/tour-${Date.now()}-${i + 1}.jpeg`;
+      const filename = `uploads/tour-${Date.now()}-${i + 1}`;
 
       await sharp(file.buffer)
         .resize(2000, 1333)
@@ -79,6 +82,7 @@ exports.resizeTourImages = catchAsync(async (req, res, next) => {
       const imagesResult = await uploadToCloudinary(filename);
 
       req.body.images.push(imagesResult.url);
+      req.body.imagesPublicId.push(imagesResult.public_id);
     })
   );
 
