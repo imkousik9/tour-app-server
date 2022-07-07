@@ -46,6 +46,19 @@ async function uploadToCloudinary(localFilePath) {
     });
 }
 
+async function deleteFromCloudinary(publicId) {
+  return cloudinary.uploader
+    .destroy(publicId)
+    .then(() => {
+      return {
+        message: 'Success'
+      };
+    })
+    .catch((error) => {
+      return { message: 'Fail' };
+    });
+}
+
 exports.uploadTourImages = upload.fields([
   { name: 'imageCover', maxCount: 1 },
   { name: 'images', maxCount: 3 }
@@ -160,11 +173,19 @@ exports.deleteTour = catchAsync(async (req, res, next) => {
   const tour = await Tour.findByIdAndDelete(req.params.id);
 
   if (!tour) {
-    res.status(404).json({
+    return res.status(404).json({
       status: 'Not Found',
       message: 'No tour found with that ID'
     });
   }
 
-  res.status(204).json({ data: null });
+  await deleteFromCloudinary(tour.imageCoverPublicId);
+
+  await Promise.all(
+    tour.imagesPublicId.map(async (imagePublicId) => {
+      await deleteFromCloudinary(imagePublicId);
+    })
+  );
+
+  return res.status(204).json({ data: null });
 });
