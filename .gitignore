@@ -24,4 +24,6 @@ yarn-error.log*
 
 images
 /images
+/uploads
+/public
 payment1.json
