@@ -1,6 +1,7 @@
 const fs = require('fs');
 const multer = require('multer');
 const sharp = require('sharp');
+const axios = require('./../utils/axios');
 const cloudinary = require('./../utils/cloudinary');
 const catchAsync = require('./../utils/catchAsync');
 const Tour = require('./../models/tourModel');
@@ -59,6 +60,20 @@ async function deleteFromCloudinary(publicId) {
     });
 }
 
+async function toursRevalidate(slug, isDeleted = false) {
+  const secret = process.env.REVALIDATE_SECRET_TOKEN;
+
+  await axios
+    .get(`api/tours-revalidate?secret=${secret}`)
+    .then((res) => res.data);
+
+  if (!isDeleted) {
+    await axios
+      .get(`api/tour-revalidate?slug=${slug}&secret=${secret}`)
+      .then((res) => res.data);
+  }
+}
+
 exports.uploadTourImages = upload.fields([
   { name: 'imageCover', maxCount: 1 },
   { name: 'images', maxCount: 3 }
@@ -104,6 +119,8 @@ exports.resizeTourImages = catchAsync(async (req, res, next) => {
 
 exports.createTour = catchAsync(async (req, res, next) => {
   const tour = await Tour.create(req.body);
+  await toursRevalidate(tour.slug);
+
   res.status(201).json(tour);
 });
 
@@ -160,6 +177,7 @@ exports.updateTour = catchAsync(async (req, res, next) => {
 
   try {
     const updatedTour = tour.save();
+    await toursRevalidate(tour.slug);
     res.status(200).json(updatedTour);
   } catch (err) {
     res.status(400).json({
@@ -187,5 +205,6 @@ exports.deleteTour = catchAsync(async (req, res, next) => {
     })
   );
 
+  await toursRevalidate(tour.slug, true);
   return res.status(204).json({ data: null });
 });
